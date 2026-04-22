@@ -4,6 +4,7 @@
   "description": "Магазин виниловых пластинок с Telegram Mini App",
   "main": "server.js",
   "scripts": {
+    "postinstall": "npm rebuild sqlite3 --build-from-source",
     "start": "node server.js",
     "build": "npm install"
     
