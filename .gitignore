@@ -1,0 +1,10 @@
+node_modules/
+package-lock.json
+*.db
+*.log
+.env
+.DS_Store
+public/uploads/
+public/audio/
+public/photo/
+public/avatars/

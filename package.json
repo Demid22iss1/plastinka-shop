@@ -1,16 +1,16 @@
 {
   "name": "plastinka3",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Магазин виниловых пластинок с Telegram Mini App",
+  "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server.js",
+    "build": "npm install"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.3",
     "express": "^5.2.1",
     "express-session": "^1.19.0",
