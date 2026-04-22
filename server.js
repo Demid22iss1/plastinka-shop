@@ -11,9 +11,6 @@ const db = new sqlite3.Database("./database.sqlite");
 db.run("PRAGMA encoding = 'UTF-8'");
 db.run("PRAGMA case_sensitive_like = OFF");
 
-app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/index.html');
-});
 // ============================================================
 // НАСТРОЙКИ MIDDLEWARE
 // ============================================================
@@ -41,7 +38,6 @@ function escapeHtml(str) {
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
 }
-
 // ============================================================
 // СОЗДАНИЕ ПАПОК ДЛЯ ЗАГРУЗКИ ФАЙЛОВ
 // ============================================================
@@ -232,8 +228,6 @@ db.serialize(() => {
         }
     });
 
-    
-
     // Создание администратора
     db.get("SELECT COUNT(*) as count FROM users", [], (err, result) => {
         if (!err && result.count === 0) {
@@ -244,12 +238,13 @@ db.serialize(() => {
     });
 
     // Добавление колонки telegram_id в таблицу users
-db.run(`ALTER TABLE users ADD COLUMN telegram_id INTEGER`, (err) => {
-    if (err && !err.message.includes('duplicate column name')) {
-        console.log("⚠️ Колонка telegram_id уже существует или ошибка:", err.message);
-    } else if (!err) {
-        console.log("✅ Добавлена колонка telegram_id");
-    }
+    db.run(`ALTER TABLE users ADD COLUMN telegram_id INTEGER`, (err) => {
+        if (err && !err.message.includes('duplicate column name')) {
+            console.log("⚠️ Колонка telegram_id уже существует или ошибка:", err.message);
+        } else if (!err) {
+            console.log("✅ Добавлена колонка telegram_id");
+        }
+    });
 });
 
 // Telegram авторизация API
@@ -281,7 +276,6 @@ app.post("/api/telegram-auth", express.json(), (req, res) => {
             const defaultPassword = Math.random().toString(36).substring(2, 15);
             const hash = bcrypt.hashSync(defaultPassword, 10);
             
-            // Сохраняем фото URL если есть
             const avatarFile = photo_url ? null : 'default-avatar.png';
             
             db.run(
@@ -305,7 +299,6 @@ app.post("/api/telegram-auth", express.json(), (req, res) => {
             );
         }
     });
-});
 });
 
 // ============================================================
@@ -365,7 +358,7 @@ app.get("/api/favorites/count", requireAuth, (req, res) => {
     });
 });
 
-// API для получения списка избранного (новый endpoint для модального окна)
+// API для получения списка избранного
 app.get("/api/favorites/list", requireAuth, (req, res) => {
     const userId = req.session.user.id;
     
@@ -429,7 +422,7 @@ app.get("/api/favorites/list", requireAuth, (req, res) => {
     });
 });
 
-// API для удаления из избранного (для модального окна)
+// API для удаления из избранного
 app.post("/api/favorites/remove", requireAuth, (req, res) => {
     const userId = req.session.user.id;
     const { productId, type } = req.body;
@@ -445,7 +438,7 @@ app.post("/api/favorites/remove", requireAuth, (req, res) => {
     });
 });
 
-// Исправленный API для избранного
+// API для переключения избранного
 app.post("/api/favorites/toggle", requireAuth, express.json(), (req, res) => {
     const { id } = req.body;
     const userId = req.session.user.id;
@@ -749,13 +742,17 @@ app.get("/", (req, res) => {
                         `;
                         products.forEach(product => {
                             content += `
-                                <div class="product-card" data-product-id="${product.id}" data-product-name="${escapeHtml(product.name)}" data-product-artist="${escapeHtml(product.artist)}" data-product-price="${product.price}" data-product-image="/uploads/${product.image}" data-product-description="${escapeHtml(product.description || 'Нет описания')}" data-product-genre="${escapeHtml(product.genre || 'Rock')}" data-product-year="${escapeHtml(product.year || '1970')}" data-product-audio="${product.audio || ''}">
-                                    <div class="product-image">
-                                        <img src="/uploads/${product.image}" alt="${escapeHtml(product.name)}">
-                                        <div class="vinyl-overlay">
-                                            <img src="/photo/plastinka-audio.png" class="vinyl-icon">
-                                        </div>
-                                    </div>
+                                <div class="product-card" 
+                            data-product-id="${product.id}" 
+                            data-product-name="${escapeHtml(product.name)}" 
+                            data-product-artist="${escapeHtml(product.artist)}" 
+                            data-product-price="${product.price}" 
+                            data-product-image="/uploads/${product.image}" 
+                            data-product-description="${escapeHtml(product.description || 'Нет описания')}" 
+                            data-product-genre="${escapeHtml(product.genre || 'Rock')}" 
+                            data-product-year="${escapeHtml(product.year || '1970')}" 
+                            data-product-audio="${product.audio || ''}"
+                            onclick="showProductModal(${product.id}, '${escapeHtml(product.name)}', '${escapeHtml(product.artist)}', ${product.price}, '/uploads/${product.image}', '${escapeHtml(product.description || 'Нет описания')}', '${escapeHtml(product.genre || 'Rock')}', '${escapeHtml(product.year || '1970')}', '${product.audio || ''}')">
                                     <div class="product-info">
                                         <div class="product-name">${escapeHtml(product.name)}</div>
                                         <div class="product-artist">${escapeHtml(product.artist)}</div>
@@ -3796,13 +3793,24 @@ app.get("/catalog", (req, res) => {
                         document.getElementById('productModalDescription').textContent = description;
                         document.getElementById('productModalPrice').innerHTML = price + ' <span>$</span>';
                         
-                        if (audio && audio !== 'null' && audio !== '') {
-                            const playBtn = document.getElementById('productModalPlayBtn');
-                            if (playBtn) {
-                                playBtn.style.display = 'flex';
-                                window.currentAudioFile = audio;
+                        // Воспроизведение при долгом нажатии
+                        if (audio && audio !== '') {
+                            const modalContent = document.querySelector('#productModal .modal-content');
+                            if (modalContent) {
+                                modalContent.ontouchstart = () => {
+                                    pressTimer = setTimeout(() => {
+                                        playVinylAudio('/audio/' + audio);
+                                    }, 500);
+                                };
+                                modalContent.ontouchend = () => {
+                                    clearTimeout(pressTimer);
+                                };
+                                modalContent.ontouchcancel = () => {
+                                    clearTimeout(pressTimer);
+                                };
                             }
-                        } else {
+                        }
+                        else {
                             const playBtn = document.getElementById('productModalPlayBtn');
                             if (playBtn) playBtn.style.display = 'none';
                         }
@@ -5874,6 +5882,26 @@ function renderMobilePage(title, content, user, activeTab = 'home', showNotifica
     <script>
     // Инициализация Telegram WebApp
     const tg = window.Telegram?.WebApp;
+
+    let pressTimer;
+let currentAudio = null;
+
+function playVinylAudio(audioUrl) {
+    if (!audioUrl) return;
+    if (currentAudio) {
+        currentAudio.pause();
+        currentAudio.currentTime = 0;
+    }
+    currentAudio = new Audio(audioUrl);
+    currentAudio.play().catch(e => console.log('Audio play error:', e));
+}
+
+function stopVinylAudio() {
+    if (currentAudio) {
+        currentAudio.pause();
+        currentAudio.currentTime = 0;
+    }
+}
     let tgUser = null;
     
     if (tg) {
