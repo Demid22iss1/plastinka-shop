@@ -5988,12 +5988,10 @@ function renderMobilePage(title, content, user, activeTab = 'home', showNotifica
 // ============================================================
 // ЗАПУСК СЕРВЕРА
 // ============================================================
+// В самом конце файла server.js
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`🚀 Сервер запущен на http://localhost:${PORT}`);
-    console.log(`👤 Админ: admin / admin123`);
-    console.log(`⭐ Система рейтинга из 5 звёзд с комментариями активна!`);
-    console.log(`🖼️ Пользователи могут менять аватарки с обрезкой!`);
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Сервер запущен на порту ${PORT}`);
 });
 
 module.exports = app;
