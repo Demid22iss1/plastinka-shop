@@ -4141,7 +4141,7 @@ app.get("/catalog", (req, res) => {
 let productsHTML = "";
 products.forEach(product => {
     const audioUrl = product.audio ? `/audio/${product.audio}` : '';
-    productsHTML += `   // <-- ИСПРАВЛЕНО
+    productsHTML += `
         <div class="catalog-item" data-id="${product.id}" data-name="${escapeHtml(product.name)}" data-artist="${escapeHtml(product.artist)}" data-price="${product.price}" data-image="/uploads/${product.image}" data-description="${escapeHtml(product.description || 'Нет описания')}" data-genre="${escapeHtml(product.genre || 'Rock')}" data-year="${escapeHtml(product.year || '1970')}" data-audio="${product.audio || ''}">
             <div class="image-container vinyl-container">
                 <img src="/uploads/${product.image}" class="catalog-album-cover" onerror="this.src='${DEFAULT_COVER}'">
