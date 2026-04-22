@@ -11,7 +11,9 @@ const db = new sqlite3.Database("./database.sqlite");
 db.run("PRAGMA encoding = 'UTF-8'");
 db.run("PRAGMA case_sensitive_like = OFF");
 
-
+app.get('/', (req, res) => {
+    res.sendFile(__dirname + '/index.html');
+});
 // ============================================================
 // НАСТРОЙКИ MIDDLEWARE
 // ============================================================
