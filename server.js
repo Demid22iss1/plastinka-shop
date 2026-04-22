@@ -822,7 +822,7 @@ app.get("/", (req, res) => {
                     } else {
                         let productHTML = "";
                         products.forEach(product => {
-                            productHTML += `
+                            productsHTML += `
 <div class="benefit" 
      data-product-id="${product.id}"
      data-product-name="${escapeHtml(product.name)}"
@@ -4115,39 +4115,28 @@ app.get("/catalog", (req, res) => {
                 }
                 
                 // ДЕСКТОПНАЯ ВЕРСИЯ КАТАЛОГА
-                let productsHTML = "";
-                products.forEach(product => {
+                // ДЕСКТОПНАЯ ВЕРСИЯ КАТАЛОГА
+let productsHTML = "";
+products.forEach(product => {
     const audioUrl = product.audio ? `/audio/${product.audio}` : '';
-    content += `
-        <div class="product-card" 
-             data-product-id="${product.id}" 
-             data-product-name="${escapeHtml(product.name)}" 
-             data-product-artist="${escapeHtml(product.artist)}" 
-             data-product-price="${product.price}" 
-             data-product-image="/uploads/${product.image}" 
-             data-product-description="${escapeHtml(product.description || 'Нет описания')}" 
-             data-product-genre="${escapeHtml(product.genre || 'Rock')}" 
-             data-product-year="${escapeHtml(product.year || '1970')}" 
-             data-product-audio="${product.audio || ''}"
-             data-audio-url="${audioUrl}"
-             onclick="showProductModal(${product.id}, '${escapeHtml(product.name)}', '${escapeHtml(product.artist)}', ${product.price}, '/uploads/${product.image}', '${escapeHtml(product.description || 'Нет описания')}', '${escapeHtml(product.genre || 'Rock')}', '${escapeHtml(product.year || '1970')}', '${product.audio || ''}')">
-            <div class="product-image">
-                <img src="/uploads/${product.image}" alt="${escapeHtml(product.name)}">
-                <div class="vinyl-overlay">
-                    <img src="/photo/plastinka-audio.png" class="vinyl-icon">
-                </div>
+    productsHTML += `   // <-- ЗДЕСЬ productsHTML (с буквой s)
+        <div class="catalog-item" data-id="${product.id}" data-name="${escapeHtml(product.name)}" data-artist="${escapeHtml(product.artist)}" data-price="${product.price}" data-image="/uploads/${product.image}" data-description="${escapeHtml(product.description || 'Нет описания')}" data-genre="${escapeHtml(product.genre || 'Rock')}" data-year="${escapeHtml(product.year || '1970')}" data-audio="${product.audio || ''}">
+            <div class="image-container vinyl-container">
+                <img src="/uploads/${product.image}" class="catalog-album-cover" onerror="this.src='${DEFAULT_COVER}'">
+                <img src="/photo/plastinka-audio.png" class="vinyl-disc-small">
+                ${product.audio ? `<audio class="album-audio" src="/audio/${product.audio}"></audio>` : ''}
             </div>
-            <div class="product-info">
-                <div class="product-name">${escapeHtml(product.name)}</div>
-                <div class="product-artist">${escapeHtml(product.artist)}</div>
-                <div class="product-price">$${product.price}</div>
-                <div class="product-actions">
-                    <button class="action-btn" onclick="event.stopPropagation(); addToCartMobile('product_${product.id}')">
-                        <i class="fas fa-shopping-cart"></i>
-                    </button>
-                    <button class="action-btn" onclick="event.stopPropagation(); toggleFavoriteMobile('product_${product.id}')">
-                        <i class="fas fa-heart"></i>
-                    </button>
+            <div class="catalog-item-info">
+                <div class="catalog-item-name">${escapeHtml(product.name)}</div>
+                <div class="catalog-item-artist">${escapeHtml(product.artist)}</div>
+                <div class="rating-stars" data-product-id="${product.id}" data-rating="${product.avg_rating}">${generateStarRatingHTML(product.avg_rating, product.votes_count)}</div>
+                <div class="catalog-item-price">$${product.price}</div>
+                <div class="catalog-item-actions">
+                    <form action="/add-to-cart" method="POST">
+                        <input type="hidden" name="id" value="product_${product.id}">
+                        <button type="submit" class="catalog-cart-btn"><i class="fas fa-shopping-cart"></i> В корзину</button>
+                    </form>
+                    <button onclick="toggleFavorite('product_${product.id}')" class="catalog-fav-btn"><i class="fas fa-heart"></i></button>
                 </div>
             </div>
         </div>
