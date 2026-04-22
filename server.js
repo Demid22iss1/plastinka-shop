@@ -3717,26 +3717,49 @@ app.get("/catalog", (req, res) => {
                         content += `<div class="empty-cart-state"><div class="empty-cart-icon">🎵</div><h3 class="empty-cart-title">В каталоге пока пусто</h3><p class="empty-cart-text">Пластинки скоро появятся. Загляните позже!</p><a href="/" class="empty-cart-btn">На главную</a></div>`;
                     } else {
                         content += `<div class="products-grid">`;
-                        products.forEach(p => {
-                            const coverImage = p.image ? `/uploads/${p.image}` : DEFAULT_COVER;
-                            content += `
-                            <div class="product-card" data-id="${p.id}" data-name="${escapeHtml(p.name)}" data-artist="${escapeHtml(p.artist)}" data-price="${p.price}" data-image="${coverImage}" data-description="${escapeHtml(p.description || 'Нет описания')}" data-genre="${escapeHtml(p.genre || 'Rock')}" data-year="${escapeHtml(p.year || '1970')}" data-audio="${p.audio || ''}">
-                                <div class="product-image">
-                                    <img src="${coverImage}" onerror="this.src='${DEFAULT_COVER}'">
-                                    <div class="vinyl-overlay"><img src="/photo/plastinka-audio.png" class="vinyl-icon"></div>
-                                </div>
-                                <div class="product-info">
-                                    <div class="product-name">${escapeHtml(p.name)}</div>
-                                    <div class="product-artist">${escapeHtml(p.artist)}</div>
-                                    <div class="rating-stars" data-product-id="${p.id}" data-rating="${p.avg_rating}">${generateStarRatingHTML(p.avg_rating, p.votes_count)}</div>
-                                    <div class="product-price">$${p.price}</div>
-                                    <div class="product-actions">
-                                        <button class="action-btn" onclick="event.stopPropagation(); addToCartMobile('product_${p.id}')"><i class="fas fa-shopping-cart"></i></button>
-                                        <button class="action-btn" onclick="event.stopPropagation(); toggleFavoriteMobile('product_${p.id}')"><i class="fas fa-heart"></i></button>
-                                    </div>
-                                </div>
-                            </div>`;
-                        });
+                        products.forEach(product => {
+    const audioUrl = product.audio ? `/audio/${product.audio}` : '';
+    content += `
+        <div class="product-card" 
+             data-product-id="${product.id}" 
+             data-product-name="${escapeHtml(product.name)}" 
+             data-product-artist="${escapeHtml(product.artist)}" 
+             data-product-price="${product.price}" 
+             data-product-image="/uploads/${product.image}" 
+             data-product-description="${escapeHtml(product.description || 'Нет описания')}" 
+             data-product-genre="${escapeHtml(product.genre || 'Rock')}" 
+             data-product-year="${escapeHtml(product.year || '1970')}" 
+             data-product-audio="${product.audio || ''}"
+             data-audio-url="${audioUrl}"
+             onclick="showProductModal(${product.id}, '${escapeHtml(product.name)}', '${escapeHtml(product.artist)}', ${product.price}, '/uploads/${product.image}', '${escapeHtml(product.description || 'Нет описания')}', '${escapeHtml(product.genre || 'Rock')}', '${escapeHtml(product.year || '1970')}', '${product.audio || ''}')"
+             ontouchstart="pressTimer = setTimeout(() => playVinylAudio('${audioUrl}'), 500)"
+             ontouchend="clearTimeout(pressTimer)"
+             ontouchcancel="clearTimeout(pressTimer)">
+            <div class="product-image">
+                <img src="/uploads/${product.image}" alt="${escapeHtml(product.name)}">
+                <div class="vinyl-overlay">
+                    <img src="/photo/plastinka-audio.png" class="vinyl-icon">
+                </div>
+            </div>
+            <div class="product-info">
+                <div class="product-name">${escapeHtml(product.name)}</div>
+                <div class="product-artist">${escapeHtml(product.artist)}</div>
+                <div class="rating-stars" data-product-id="${product.id}" data-rating="${product.avg_rating}">
+                    ${generateStarRatingHTML(product.avg_rating, product.votes_count)}
+                </div>
+                <div class="product-price">$${product.price}</div>
+                <div class="product-actions">
+                    <button class="action-btn" onclick="event.stopPropagation(); addToCartMobile('product_${product.id}')">
+                        <i class="fas fa-shopping-cart"></i>
+                    </button>
+                    <button class="action-btn" onclick="event.stopPropagation(); toggleFavoriteMobile('product_${product.id}')">
+                        <i class="fas fa-heart"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+});
                         content += `</div>`;
                     }
                     
