@@ -4116,30 +4116,43 @@ app.get("/catalog", (req, res) => {
                 
                 // ДЕСКТОПНАЯ ВЕРСИЯ КАТАЛОГА
                 let productsHTML = "";
-                products.forEach(p => {
-                    const coverImage = p.image ? `/uploads/${p.image}` : DEFAULT_COVER;
-                    productsHTML += `
-                    <div class="catalog-item" data-id="${p.id}" data-name="${escapeHtml(p.name)}" data-artist="${escapeHtml(p.artist)}" data-price="${p.price}" data-image="${coverImage}" data-description="${escapeHtml(p.description || 'Нет описания')}" data-genre="${escapeHtml(p.genre || 'Rock')}" data-year="${escapeHtml(p.year || '1970')}" data-audio="${p.audio || ''}">
-                        <div class="image-container vinyl-container">
-                            <img src="${coverImage}" class="catalog-album-cover" onerror="this.src='${DEFAULT_COVER}'">
-                            <img src="/photo/plastinka-audio.png" class="vinyl-disc-small">
-                            ${p.audio ? `<audio class="album-audio" src="/audio/${p.audio}"></audio>` : ''}
-                        </div>
-                        <div class="catalog-item-info">
-                            <div class="catalog-item-name">${escapeHtml(p.name)}</div>
-                            <div class="catalog-item-artist">${escapeHtml(p.artist)}</div>
-                            <div class="rating-stars" data-product-id="${p.id}" data-rating="${p.avg_rating}">${generateStarRatingHTML(p.avg_rating, p.votes_count)}</div>
-                            <div class="catalog-item-price">$${p.price}</div>
-                            <div class="catalog-item-actions">
-                                <form action="/add-to-cart" method="POST">
-                                    <input type="hidden" name="id" value="product_${p.id}">
-                                    <button type="submit" class="catalog-cart-btn"><i class="fas fa-shopping-cart"></i> В корзину</button>
-                                </form>
-                                <button onclick="toggleFavorite('product_${p.id}')" class="catalog-fav-btn"><i class="fas fa-heart"></i></button>
-                            </div>
-                        </div>
-                    </div>`;
-                });
+                products.forEach(product => {
+    const audioUrl = product.audio ? `/audio/${product.audio}` : '';
+    content += `
+        <div class="product-card" 
+             data-product-id="${product.id}" 
+             data-product-name="${escapeHtml(product.name)}" 
+             data-product-artist="${escapeHtml(product.artist)}" 
+             data-product-price="${product.price}" 
+             data-product-image="/uploads/${product.image}" 
+             data-product-description="${escapeHtml(product.description || 'Нет описания')}" 
+             data-product-genre="${escapeHtml(product.genre || 'Rock')}" 
+             data-product-year="${escapeHtml(product.year || '1970')}" 
+             data-product-audio="${product.audio || ''}"
+             data-audio-url="${audioUrl}"
+             onclick="showProductModal(${product.id}, '${escapeHtml(product.name)}', '${escapeHtml(product.artist)}', ${product.price}, '/uploads/${product.image}', '${escapeHtml(product.description || 'Нет описания')}', '${escapeHtml(product.genre || 'Rock')}', '${escapeHtml(product.year || '1970')}', '${product.audio || ''}')">
+            <div class="product-image">
+                <img src="/uploads/${product.image}" alt="${escapeHtml(product.name)}">
+                <div class="vinyl-overlay">
+                    <img src="/photo/plastinka-audio.png" class="vinyl-icon">
+                </div>
+            </div>
+            <div class="product-info">
+                <div class="product-name">${escapeHtml(product.name)}</div>
+                <div class="product-artist">${escapeHtml(product.artist)}</div>
+                <div class="product-price">$${product.price}</div>
+                <div class="product-actions">
+                    <button class="action-btn" onclick="event.stopPropagation(); addToCartMobile('product_${product.id}')">
+                        <i class="fas fa-shopping-cart"></i>
+                    </button>
+                    <button class="action-btn" onclick="event.stopPropagation(); toggleFavoriteMobile('product_${product.id}')">
+                        <i class="fas fa-heart"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+});
                                 
                 res.send(`
 <!DOCTYPE html>
@@ -5880,28 +5893,33 @@ function renderMobilePage(title, content, user, activeTab = 'home', showNotifica
         <a href="/profile" class="nav-item ${activeTab === 'profile' ? 'active' : ''}"><i class="fas fa-user"></i><span>Профиль</span></a>
     </nav>
     <script>
+    // ========== АУДИО ДЛЯ МОБИЛЬНОЙ ВЕРСИИ ==========
+    let pressTimer = null;
+    let currentAudio = null;
+
+    function playVinylAudio(audioUrl) {
+        if (!audioUrl || audioUrl === '') {
+            console.log('Нет аудио для воспроизведения');
+            return;
+        }
+        if (currentAudio) {
+            currentAudio.pause();
+            currentAudio.currentTime = 0;
+        }
+        currentAudio = new Audio(audioUrl);
+        currentAudio.play().catch(e => console.log('Audio play error:', e));
+    }
+
+    function stopVinylAudio() {
+        if (currentAudio) {
+            currentAudio.pause();
+            currentAudio.currentTime = 0;
+            currentAudio = null;
+        }
+    }
+    
     // Инициализация Telegram WebApp
     const tg = window.Telegram?.WebApp;
-
-    let pressTimer;
-let currentAudio = null;
-
-function playVinylAudio(audioUrl) {
-    if (!audioUrl) return;
-    if (currentAudio) {
-        currentAudio.pause();
-        currentAudio.currentTime = 0;
-    }
-    currentAudio = new Audio(audioUrl);
-    currentAudio.play().catch(e => console.log('Audio play error:', e));
-}
-
-function stopVinylAudio() {
-    if (currentAudio) {
-        currentAudio.pause();
-        currentAudio.currentTime = 0;
-    }
-}
     let tgUser = null;
     
     if (tg) {
@@ -5949,7 +5967,6 @@ function stopVinylAudio() {
                     if (data.isNew) {
                         console.log('🆕 Новый пользователь зарегистрирован');
                     }
-                    // Обновляем страницу для отображения авторизованного состояния
                     if (!${!!user}) {
                         window.location.reload();
                     }
@@ -5990,12 +6007,10 @@ function stopVinylAudio() {
         setTimeout(() => { if(toast && toast.remove) toast.remove(); }, 3000);
     }
     
-    // Функция для закрытия Mini App (если нужно)
     function closeMiniApp() {
         if (tg) tg.close();
     }
     
-    // Показываем основную кнопку если нужно
     function showMainButton(text, onClick) {
         if (tg) {
             tg.MainButton.setText(text);
@@ -6004,10 +6019,39 @@ function stopVinylAudio() {
         }
     }
     
-    // Скрываем основную кнопку
     function hideMainButton() {
         if (tg) tg.MainButton.hide();
     }
+    
+    // Функция для воспроизведения при долгом нажатии на карточку
+    function setupLongPress(element, audioUrl) {
+        if (!element || !audioUrl) return;
+        
+        element.addEventListener('touchstart', function(e) {
+            pressTimer = setTimeout(function() {
+                playVinylAudio(audioUrl);
+            }, 500);
+        });
+        
+        element.addEventListener('touchend', function() {
+            clearTimeout(pressTimer);
+        });
+        
+        element.addEventListener('touchcancel', function() {
+            clearTimeout(pressTimer);
+        });
+    }
+    
+    // Настройка долгого нажатия для всех карточек после загрузки страницы
+    document.addEventListener('DOMContentLoaded', function() {
+        const cards = document.querySelectorAll('.product-card');
+        cards.forEach(function(card) {
+            const audioUrl = card.getAttribute('data-audio-url');
+            if (audioUrl && audioUrl !== '') {
+                setupLongPress(card, audioUrl);
+            }
+        });
+    });
     </script>
     </body>
     </html>`;
