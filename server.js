@@ -4138,10 +4138,11 @@ app.get("/catalog", (req, res) => {
                 }
                 
                 // ДЕСКТОПНАЯ ВЕРСИЯ КАТАЛОГА
+                // ДЕСКТОПНАЯ ВЕРСИЯ КАТАЛОГА
 let productsHTML = "";
 products.forEach(product => {
     const audioUrl = product.audio ? `/audio/${product.audio}` : '';
-    productsHTML += `
+    productsHTML += `   // <-- ЗДЕСЬ productsHTML (с буквой s)
         <div class="catalog-item" data-id="${product.id}" data-name="${escapeHtml(product.name)}" data-artist="${escapeHtml(product.artist)}" data-price="${product.price}" data-image="/uploads/${product.image}" data-description="${escapeHtml(product.description || 'Нет описания')}" data-genre="${escapeHtml(product.genre || 'Rock')}" data-year="${escapeHtml(product.year || '1970')}" data-audio="${product.audio || ''}">
             <div class="image-container vinyl-container">
                 <img src="/uploads/${product.image}" class="catalog-album-cover" onerror="this.src='${DEFAULT_COVER}'">
